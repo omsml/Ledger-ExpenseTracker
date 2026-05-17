@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ledger — Expense Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ═══════════ SIDEBAR ═══════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="url(#lg)"/>
+          <path d="M10 16h12M16 10v12" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#4f7fe8"/><stop offset="1" stop-color="#7c3aed"/></defs>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">Ledger</div>
+        <div class="logo-sub">Finance Manager</div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">Overview</div>
+        <button class="nav-btn active" data-section="dashSection" onclick="navTo(this,'dashSection')">
+          <i class="fas fa-chart-pie"></i><span>Dashboard</span>
+        </button>
+        <button class="nav-btn" data-section="addSection" onclick="navTo(this,'addSection')">
+          <i class="fas fa-plus-circle"></i><span>Add Expense</span>
+        </button>
+        <button class="nav-btn" data-section="listSection" onclick="navTo(this,'listSection')">
+          <i class="fas fa-list-ul"></i><span>Transactions</span>
+        </button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Management</div>
+        <button class="nav-btn" data-section="budSection" onclick="navTo(this,'budSection')">
+          <i class="fas fa-bullseye"></i><span>Budget</span>
+        </button>
+        <button class="nav-btn" onclick="exportCSV()">
+          <i class="fas fa-file-export"></i><span>Export CSV</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="sb-bottom">
+      <div class="theme-toggle-row">
+        <div class="theme-info">
+          <i class="fas fa-circle-half-stroke" id="themeIcon"></i>
+          <span id="themeLabel">Light Mode</span>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="themeChk" onchange="applyTheme(this.checked)"/>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════ TOPBAR ═══════════ -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="mob-menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+      <div class="mob-logo">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+          <rect width="32" height="32" rx="8" fill="url(#lg2)"/>
+          <path d="M10 16h12M16 10v12" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <defs><linearGradient id="lg2" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse"><stop stop-color="#4f7fe8"/><stop offset="1" stop-color="#7c3aed"/></defs>
+        </svg>
+        <span>Ledger</span>
+      </div>
+      <h1 class="page-title">Financial Dashboard</h1>
+    </div>
+    <div class="topbar-right">
+      <button class="mob-theme-btn" onclick="toggleTheme()"><i class="fas fa-circle-half-stroke" id="mobThemeIcon"></i></button>
+      <button class="btn-outline" onclick="exportCSV()"><i class="fas fa-download"></i><span>Export</span></button>
+      <button class="btn-primary" onclick="scrollTo('addSection')"><i class="fas fa-plus"></i><span>Add Expense</span></button>
+    </div>
+  </header>
+
+  <!-- ═══════════ MAIN ═══════════ -->
+  <main class="main-content" id="dashSection">
+
+    <!-- Budget Row -->
+    <section class="budget-banner" id="budSection">
+      <div class="budget-icon"><i class="fas fa-bullseye"></i></div>
+      <label class="budget-label">Monthly Budget</label>
+      <div class="budget-input-wrap">
+        <span class="currency-sign">₹</span>
+        <input type="number" id="budInp" placeholder="Enter monthly limit…" min="0"/>
+      </div>
+      <button class="btn-set-budget" onclick="setBudget()">Apply Budget</button>
+    </section>
+
+    <!-- KPI Grid -->
+    <section class="kpi-grid">
+      <div class="kpi-card accent-blue" style="--delay:0s">
+        <div class="kpi-header">
+          <span class="kpi-label">Monthly Budget</span>
+          <div class="kpi-icon blue"><i class="fas fa-wallet"></i></div>
+        </div>
+        <div class="kpi-value" id="kBud">₹0</div>
+        <div class="kpi-sub" id="kBudS">Not configured</div>
+      </div>
+      <div class="kpi-card accent-red" style="--delay:.07s">
+        <div class="kpi-header">
+          <span class="kpi-label">Total Spent</span>
+          <div class="kpi-icon red"><i class="fas fa-arrow-trend-up"></i></div>
+        </div>
+        <div class="kpi-value" id="kSpt">₹0</div>
+        <div class="kpi-sub" id="kSptS">0 transactions</div>
+        <div class="progress-bar"><div class="progress-fill" id="kBar" style="width:0%"></div></div>
+      </div>
+      <div class="kpi-card accent-green" style="--delay:.14s">
+        <div class="kpi-header">
+          <span class="kpi-label">Remaining</span>
+          <div class="kpi-icon green"><i class="fas fa-piggy-bank"></i></div>
+        </div>
+        <div class="kpi-value" id="kRem">—</div>
+        <div class="kpi-sub" id="kRemS">Set budget to track</div>
+      </div>
+      <div class="kpi-card accent-purple" style="--delay:.21s">
+        <div class="kpi-header">
+          <span class="kpi-label">Transactions</span>
+          <div class="kpi-icon purple"><i class="fas fa-receipt"></i></div>
+        </div>
+        <div class="kpi-value" id="kCnt">0</div>
+        <div class="kpi-sub" id="kCntS">entries recorded</div>
+      </div>
+    </section>
+
+    <!-- Content Grid -->
+    <section class="content-layout">
+
+      <!-- Left Column -->
+      <div class="col-left">
+
+        <!-- Add Expense Form -->
+        <div class="card" id="addSection">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-dot" style="background: var(--clr-gold)"></div>
+              Record New Expense
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Description</label>
+              <input type="text" id="eTitle" placeholder="e.g. Restaurant dinner"/>
+            </div>
+            <div class="field">
+              <label>Amount (₹)</label>
+              <input type="number" id="eAmt" placeholder="0.00" min="0" step="0.01"/>
+            </div>
+            <div class="field">
+              <label>Category</label>
+              <div class="select-wrap">
+                <select id="eCat">
+                  <option value="">— Select category —</option>
+                  <option value="Food">🍽 Food &amp; Dining</option>
+                  <option value="Travel">✈️ Travel</option>
+                  <option value="Shopping">🛍 Shopping</option>
+                  <option value="Health">💊 Health &amp; Medical</option>
+                  <option value="Bills">📄 Bills &amp; Utilities</option>
+                  <option value="Entertainment">🎭 Entertainment</option>
+                  <option value="Education">📚 Education</option>
+                  <option value="Other">📦 Other</option>
+                </select>
+                <i class="fas fa-chevron-down select-arrow"></i>
+              </div>
+            </div>
+            <div class="field">
+              <label>Date</label>
+              <input type="date" id="eDate"/>
+            </div>
+            <button class="btn-submit full" onclick="addExp()">
+              <i class="fas fa-plus"></i> Record Expense
+            </button>
+          </div>
+        </div>
+
+        <!-- Transaction List -->
+        <div class="card" id="listSection">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-dot" style="background: var(--clr-blue)"></div>
+              Transaction History
+            </div>
+            <span class="entry-count" id="listCnt">0 entries</span>
+          </div>
+          <div class="list-toolbar">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" id="srchIn" placeholder="Search transactions…" oninput="renderList()"/>
+            </div>
+            <div class="select-wrap compact">
+              <select class="filter-select" id="catFil" onchange="renderList()">
+                <option value="">All Categories</option>
+                <option value="Food">Food</option>
+                <option value="Travel">Travel</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Health">Health</option>
+                <option value="Bills">Bills</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Education">Education</option>
+                <option value="Other">Other</option>
+              </select>
+              <i class="fas fa-chevron-down select-arrow"></i>
+            </div>
+          </div>
+          <div class="exp-scroll">
+            <div class="exp-list" id="expList"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column -->
+      <div class="col-right">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-dot" style="background:var(--clr-purple)"></div>Distribution</div>
+          </div>
+          <div class="chart-box"><canvas id="donut"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-dot" style="background:var(--clr-green)"></div>By Category</div>
+          </div>
+          <div class="cat-breakdown" id="catBd"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-dot" style="background:var(--clr-gold)"></div>7-Day Trend</div>
+          </div>
+          <div class="chart-box"><canvas id="bar7"></canvas></div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editOvl" onclick="handleOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-pen-to-square"></i> Edit Transaction</div>
+      <button class="modal-close" onclick="closeEdit()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-grid modal-form">
+      <div class="field">
+        <label>Description</label>
+        <input type="text" id="mTitle" placeholder="Expense description"/>
+      </div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" id="mAmt" placeholder="0.00" min="0" step="0.01"/>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <div class="select-wrap">
+          <select id="mCat">
+            <option value="Food">🍽 Food &amp; Dining</option>
+            <option value="Travel">✈️ Travel</option>
+            <option value="Shopping">🛍 Shopping</option>
+            <option value="Health">💊 Health &amp; Medical</option>
+            <option value="Bills">📄 Bills &amp; Utilities</option>
+            <option value="Entertainment">🎭 Entertainment</option>
+            <option value="Education">📚 Education</option>
+            <option value="Other">📦 Other</option>
+          </select>
+          <i class="fas fa-chevron-down select-arrow"></i>
+        </div>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="mDate"/>
+      </div>
+      <div class="modal-actions full">
+        <button class="btn-cancel" onclick="closeEdit()">Cancel</button>
+        <button class="btn-primary" onclick="saveEdit()"><i class="fas fa-check"></i> Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Toasts -->
+<div class="toast-container" id="toasts"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
